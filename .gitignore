@@ -1,9 +1,34 @@
+cd ~/b_ecu_core_hw
+cat << 'EOF' > .gitignore
+# Build directories & CMake artifacts
 build/
+**/build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Compiled binaries, object files & static analysis outputs
 *.elf
 *.bin
 *.hex
 *.map
-*.su
 *.o
+*.obj
+*.d
+*.su
+*.a
+*.so
+
+# Python & Test caches
 __pycache__/
+*.py[cod]
 .pytest_cache/
+
+# Editor & OS temporary files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+EOF

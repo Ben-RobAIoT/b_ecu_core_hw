@@ -1,0 +1,38 @@
+/* Author: Beniot Phan (Phan Bao Tin) */
+/* ECU-A (STM32F407VET6) Bare-Metal Entry Point - Step 2.2 LED Blink */
+
+#include "stm32f407_regs.h"
+#include "bsp_gpio.h"
+
+void SystemInit(void);
+
+void SystemInit(void)
+{
+    /* Cấp quyền truy cập Full (0b11) cho CP10 & CP11 (Hardware FPU) */
+    SCB->CPACR |= ((3UL << (10U * 2U)) | (3UL << (11U * 2U)));
+    __asm volatile ("dsb");
+    __asm volatile ("isb");
+
+    /* Cố định bảng vector ngắt tại đầu Flash */
+    SCB->VTOR = 0x08000000UL;
+}
+
+static void delay_busy_cycles(volatile uint32_t cycles)
+{
+    while (cycles > 0UL) {
+        cycles--;
+    }
+}
+
+int main(void)
+{
+    bsp_gpio_init();
+
+    while (1) {
+        bsp_led_toggle();
+        /* Ở xung mặc định HSI 16 MHz, ~800,000 vòng lặp tương đương ~250-300 ms */
+        delay_busy_cycles(800000UL);
+    }
+
+    return 0;
+}

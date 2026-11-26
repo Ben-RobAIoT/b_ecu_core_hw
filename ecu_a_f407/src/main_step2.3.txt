@@ -1,0 +1,62 @@
+/* Author: Beniot Phan (Phan Bao Tin) */
+/* ECU-A (STM32F407VET6) Bare-Metal Entry Point - Step 2.3 UART & DWT Cycle Counter */
+
+#include <stdio.h>
+#include "stm32f407_regs.h"
+#include "bsp_gpio.h"
+#include "bsp_uart_dwt.h"
+
+void SystemInit(void);
+
+void SystemInit(void)
+{
+    /* Cấp quyền truy cập Full (0b11) cho CP10 & CP11 (Hardware FPU) */
+    SCB->CPACR |= ((3UL << (10U * 2U)) | (3UL << (11U * 2U)));
+    __asm volatile ("dsb");
+    __asm volatile ("isb");
+
+    /* Cố định bảng vector ngắt tại đầu Flash */
+    SCB->VTOR = 0x08000000UL;
+}
+
+static void delay_busy_cycles(volatile uint32_t cycles)
+{
+    while (cycles > 0UL) {
+        cycles--;
+    }
+}
+
+int main(void)
+{
+    bsp_gpio_init();
+    bsp_uart1_init_115200_hsi16();
+    bsp_dwt_init();
+
+    printf("\r\n[ECU-A] Boot OK | SYSCLK=16MHz (HSI) | DWT_CTRL=0x%08lX\r\n",
+           (unsigned long)DWT->CTRL);
+
+    uint32_t tick = 0UL;
+
+    while (1) {
+        uint32_t t0 = bsp_dwt_get_cycles();
+        bsp_led_toggle();
+        uint32_t t1 = bsp_dwt_get_cycles();
+
+        delay_busy_cycles(800000UL);
+        uint32_t t2 = bsp_dwt_get_cycles();
+
+        uint32_t toggle_cycles = t1 - t0;
+        uint32_t loop_cycles   = t2 - t0;
+        uint32_t loop_ms       = loop_cycles / 16000UL; /* 16,000 cycles = 1 ms tại 16 MHz */
+
+        printf("[ECU-A] tick=%lu | toggle=%lu cyc | period=%lu cyc (~%lu ms)\r\n",
+               (unsigned long)tick,
+               (unsigned long)toggle_cycles,
+               (unsigned long)loop_cycles,
+               (unsigned long)loop_ms);
+
+        tick++;
+    }
+
+    return 0;
+}
