@@ -1,0 +1,9 @@
+build/
+*.elf
+*.bin
+*.hex
+*.map
+*.su
+*.o
+__pycache__/
+.pytest_cache/
